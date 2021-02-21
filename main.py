@@ -5,7 +5,8 @@ import random
 FRAME_SIZE = 600, 600
 MATRIX_SIZE = 15, 15
 CELL_SIZE = FRAME_SIZE[0] // MATRIX_SIZE[0], FRAME_SIZE[1] // MATRIX_SIZE[1]
-FPS = 10
+FPS = 5
+BG_COLOR = (0, 0, 0)
 
 LEFT = "LEFT"
 RIGHT = "RIGHT"
@@ -64,7 +65,7 @@ def spawn_food():
     for i in range(MATRIX_SIZE[0] * MATRIX_SIZE[1]):
         food = [random.randint(1, MATRIX_SIZE[0]), random.randint(1, MATRIX_SIZE[1])]
         for j in snake:
-            if j != food:
+            if j[0] != food[0] and j[1] != food[1]:
                 return
 
 
@@ -159,17 +160,20 @@ while True:
                 if direction != UP:
                     direction = DOWN
 
-    move_snake(direction)
-    frame.fill((0, 0, 0))
-    draw_cells(frame)
-    draw_snake(frame)
-    draw_food(frame)
-    pygame.display.flip()
-
     if did_eat_food():
+        frame.fill(BG_COLOR)
         enlarge_snake(direction)
         spawn_food()
+        draw_snake(frame)
+        draw_food(frame)
     if is_over():
         snake.clear()
         spawn_snake()
         spawn_food()
+
+    move_snake(direction)
+    frame.fill(BG_COLOR)
+    draw_cells(frame)
+    draw_snake(frame)
+    draw_food(frame)
+    pygame.display.flip()
