@@ -3,118 +3,80 @@ import sys
 import random
 
 FRAME_SIZE = 600, 600
-MATRIX_SIZE = 15, 15
-CELL_SIZE = FRAME_SIZE[0] // MATRIX_SIZE[0], FRAME_SIZE[1] // MATRIX_SIZE[1]
 FPS = 5
-BG_COLOR = (0, 0, 0)
+CELL_SIZE = 20
+BG_COLOR = pygame.Color(0, 0, 0)
 
-LEFT = "LEFT"
-RIGHT = "RIGHT"
-UP = "UP"
-DOWN = "DOWN"
-NONE = "NONE"
+TURN_UP = 0
+TURN_DOWN = 1
+TURN_LEFT = 2
+TURN_RIGHT = 3
 
+clock = pygame.time.Clock()
+direction = TURN_RIGHT
 snake = []
 food = []
-direction = NONE
+
+
+def draw_cells(__field):
+    color = pygame.Color(5, 5, 5)
+    for x in range(CELL_SIZE, FRAME_SIZE[0], CELL_SIZE):
+        pygame.draw.line(__field, color,
+                         (x, 0),
+                         (x, FRAME_SIZE[1]))
+
+    for y in range(CELL_SIZE, FRAME_SIZE[1], CELL_SIZE):
+        pygame.draw.line(__field, color,
+                         (0, y),
+                         (FRAME_SIZE[1], y))
+
+
+def draw_snake(__field):
+    for i in snake:
+        pygame.draw.rect(__field, (0, 255, 0), (
+            i[0]-CELL_SIZE, i[1]-CELL_SIZE, CELL_SIZE, CELL_SIZE
+        ))
+
+
+def draw_food(__field):
+    pygame.draw.rect(__field, (255, 255, 255), (
+        food[0]-CELL_SIZE, food[1]-CELL_SIZE, CELL_SIZE, CELL_SIZE
+    ))
 
 
 def spawn_snake():
-    x = random.randint(1, MATRIX_SIZE[0])
-    y = random.randint(1, MATRIX_SIZE[1])
-    snake.append([x, y])
+    position = random.randint(1, FRAME_SIZE[0]//CELL_SIZE)*CELL_SIZE,\
+               random.randint(1, FRAME_SIZE[1]//CELL_SIZE)*CELL_SIZE
 
-
-def draw_cells(__container):
-    for x in range(MATRIX_SIZE[0]):
-        pygame.draw.line(__container, (40, 40, 40),
-                         (x * CELL_SIZE[0], 0),
-                         (x * CELL_SIZE[0], MATRIX_SIZE[1] * CELL_SIZE[1]))
-
-    for y in range(MATRIX_SIZE[1]):
-        pygame.draw.line(__container, (40, 40, 40),
-                         (0, y * CELL_SIZE[1]),
-                         (MATRIX_SIZE[0] * CELL_SIZE[0], y * CELL_SIZE[1]))
-
-
-def enlarge_snake(__direction):
-    left = -1, 0
-    right = 1, 0
-    up = 0, -1
-    down = 0, 1
-
-    position = snake[0].copy()
-    if __direction == LEFT:
-        position[0] += left[0]
-        position[1] += left[1]
-    elif __direction == RIGHT:
-        position[0] += right[0]
-        position[1] += right[1]
-    elif __direction == UP:
-        position[0] += up[0]
-        position[1] += up[1]
-    elif __direction == DOWN:
-        position[0] += down[0]
-        position[1] += down[1]
-
-    snake.insert(0, position)
+    snake.clear()
+    snake.append(list(position))
 
 
 def spawn_food():
     global food
-    for i in range(MATRIX_SIZE[0] * MATRIX_SIZE[1]):
-        food = [random.randint(1, MATRIX_SIZE[0]), random.randint(1, MATRIX_SIZE[1])]
-        for j in snake:
-            if j[0] != food[0] and j[1] != food[1]:
-                return
+    while True:
+        food = [random.randint(1, FRAME_SIZE[0] // CELL_SIZE) * CELL_SIZE,
+                random.randint(1, FRAME_SIZE[1] // CELL_SIZE) * CELL_SIZE]
+        if snake[0][0] != food[0] and snake[0][1] != food[1]:
+            break
 
 
-def draw_food(__container):
-    pygame.draw.rect(__container, (255, 0, 0), (
-        (food[0] - 1) * CELL_SIZE[0], (food[1] - 1) * CELL_SIZE[1],
-        CELL_SIZE[0], CELL_SIZE[1]
-    ))
-
-
-def draw_snake(__container):
-    pygame.draw.rect(__container, (0, 255, 255), (
-        (snake[0][0] - 1) * CELL_SIZE[0], (snake[0][1] - 1) * CELL_SIZE[1],
-        CELL_SIZE[0], CELL_SIZE[1]
-    ))
-    for i in snake:
-        if snake[0] == i:
-            continue
-        pygame.draw.rect(__container, (0, 255, 0), (
-            (i[0] - 1) * CELL_SIZE[0], (i[1] - 1) * CELL_SIZE[1],
-            CELL_SIZE[0], CELL_SIZE[1]
-        ))
+def enlarge_snake():
+    position = snake[0].copy()
+    snake.insert(0, position)
 
 
 def move_snake(__direction):
-    left = -1, 0
-    right = 1, 0
-    up = 0, -1
-    down = 0, 1
-
-    snake_len = len(snake)
-
-    if __direction != NONE:
-        for i in range(snake_len - 1, 0, -1):
-            snake[i][0] = snake[i - 1][0]
-            snake[i][1] = snake[i - 1][1]
-
-    if __direction == RIGHT:
-        snake[0][0] += right[0]
-        snake[0][1] += right[1]
-    if __direction == LEFT:
-        snake[0][0] += left[0]
-        snake[0][1] += left[1]
-    if __direction == UP:
-        snake[0][0] += up[0]
-        snake[0][1] += up[1]
-    if __direction == DOWN:
-        snake[0][0] += down[0]
-        snake[0][1] += down[1]
+    for i in range(len(snake) - 1, 0, -1):
+        snake[i] = snake[i-1].copy()
+    if __direction == TURN_UP:
+        snake[0][1] -= CELL_SIZE
+    elif __direction == TURN_DOWN:
+        snake[0][1] += CELL_SIZE
+    elif __direction == TURN_LEFT:
+        snake[0][0] -= CELL_SIZE
+    elif __direction == TURN_RIGHT:
+        snake[0][0] += CELL_SIZE
 
 
 def did_eat_food():
@@ -125,55 +87,67 @@ def did_eat_food():
 
 
 def is_over():
-    if snake[0][0] > MATRIX_SIZE[0] or snake[0][0] < 1 or \
-            snake[0][1] > MATRIX_SIZE[1] or snake[0][1] < 1:
+    if snake[0][0] > FRAME_SIZE[0] or snake[0][0] < 1 or \
+            snake[0][1] > FRAME_SIZE[1] or snake[0][1] < 1:
         return True
-    for i in range(2, len(snake)-1):
+
+    for i in range(2, len(snake) - 1):
         if snake[0][0] == snake[i][0] and snake[0][1] == snake[i][1]:
             return True
 
+    return False
 
-pygame.init()
-frame = pygame.display.set_mode(FRAME_SIZE)
-pygame.display.set_caption("NSnake")
-clock = pygame.time.Clock()
-spawn_snake()
-spawn_food()
 
-while True:
-    clock.tick(FPS)
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
-        if event.type == pygame.KEYDOWN:
-            if event.key == pygame.K_RIGHT:
-                if direction != LEFT:
-                    direction = RIGHT
-            if event.key == pygame.K_LEFT:
-                if direction != RIGHT:
-                    direction = LEFT
-            if event.key == pygame.K_UP:
-                if direction != DOWN:
-                    direction = UP
-            if event.key == pygame.K_DOWN:
-                if direction != UP:
-                    direction = DOWN
+def run():
+    check_errors = pygame.init()
+    if check_errors[1] > 0:
+        print(f'[!] Had {check_errors[1]} errors when initialising game, exiting...')
+        sys.exit(-1)
+    else:
+        print('[+] Game successfully initialised')
 
-    if did_eat_food():
+    pygame.display.set_caption("NSnake")
+    frame = pygame.display.set_mode(FRAME_SIZE)
+
+    spawn_snake()
+    spawn_food()
+
+    while True:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                sys.exit()
+            elif event.type == pygame.KEYDOWN:
+                global direction
+                if event.key == pygame.K_UP or event.key == ord('w'):
+                    if direction != TURN_DOWN:
+                        direction = TURN_UP
+                elif event.key == pygame.K_DOWN or event.key == ord('s'):
+                    if direction != TURN_UP:
+                        direction = TURN_DOWN
+                elif event.key == pygame.K_LEFT or event.key == ord('a'):
+                    if direction != TURN_RIGHT:
+                        direction = TURN_LEFT
+                elif event.key == pygame.K_RIGHT or event.key == ord('d'):
+                    if direction != TURN_LEFT:
+                        direction = TURN_RIGHT
+
+        if did_eat_food():
+            spawn_food()
+            enlarge_snake()
+        if is_over():
+            spawn_snake()
+            spawn_food()
+
         frame.fill(BG_COLOR)
-        enlarge_snake(direction)
-        spawn_food()
+        draw_cells(frame)
+        move_snake(direction)
         draw_snake(frame)
         draw_food(frame)
-    if is_over():
-        snake.clear()
-        spawn_snake()
-        spawn_food()
+        pygame.display.flip()
 
-    move_snake(direction)
-    frame.fill(BG_COLOR)
-    draw_cells(frame)
-    draw_snake(frame)
-    draw_food(frame)
-    pygame.display.flip()
+        clock.tick(FPS)
+
+
+if __name__ == "__main__":
+    run()
